@@ -1,0 +1,27 @@
+[project]
+name = "comfyui-camerapack"
+description = "Camera utilities for ComfyUI. Convert between camera formats (DA3 extrinsics/intrinsics to Load3DCamera for Preview3D)."
+version = "0.1.0"
+license = { text = "MIT" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "torch>=1.9.0",
+]
+
+[project.urls]
+Repository = "https://github.com/PozzettiAndrea/ComfyUI-CameraPack"
+Documentation = "https://github.com/PozzettiAndrea/ComfyUI-CameraPack/blob/main/README.md"
+
+[tool.comfy]
+PublisherId = "pznodes"
+DisplayName = "CameraPack"
+Icon = ""
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
