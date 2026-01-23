@@ -75,11 +75,23 @@ class DA3ToLoad3DCamera:
         else:
             intr = np.array(intrinsics)
 
-        # Ensure correct shapes
-        if ext.shape[-2:] != (4, 4):
+        # Flatten and handle different extrinsics formats
+        ext = ext.flatten()
+        if ext.size == 16:
             ext = ext.reshape(4, 4)
-        if intr.shape[-2:] != (3, 3):
+        elif ext.size == 12:
+            # 3x4 matrix - add [0, 0, 0, 1] row to make 4x4
+            ext = ext.reshape(3, 4)
+            ext = np.vstack([ext, [0, 0, 0, 1]])
+        else:
+            raise ValueError(f"Unexpected extrinsics size: {ext.size}, expected 12 or 16")
+
+        # Ensure intrinsics is 3x3
+        intr = intr.flatten()
+        if intr.size == 9:
             intr = intr.reshape(3, 3)
+        else:
+            raise ValueError(f"Unexpected intrinsics size: {intr.size}, expected 9")
 
         # Extract rotation and translation from extrinsics
         R = ext[:3, :3]  # 3x3 rotation matrix
