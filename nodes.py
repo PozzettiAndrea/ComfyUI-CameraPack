@@ -4,6 +4,8 @@ ComfyUI-CameraPack: Convert camera parameters between formats.
 Converts DepthAnythingV3 extrinsics/intrinsics to ComfyUI's Load3DCamera format.
 """
 
+import ast
+import re
 import torch
 import numpy as np
 
@@ -172,13 +174,62 @@ class CreateLoad3DCamera:
         return (camera_info,)
 
 
+class CameraIntrinsics:
+    """
+    Create an INTRINSICS tensor from a pasted 3x3 matrix.
+
+    Accepts formats like:
+      [[3.2782e+03, 0, 960], [0, 2.4555e+03, 540], [0, 0, 1]]
+      tensor([[[3278.2, 0, 960], [0, 2455.5, 540], [0, 0, 1]]])
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "matrix": ("STRING", {
+                    "default": "[[1000, 0, 960],\n [0, 1000, 540],\n [0, 0, 1]]",
+                    "multiline": True,
+                    "tooltip": "3x3 intrinsics matrix [[fx, 0, cx], [0, fy, cy], [0, 0, 1]]"
+                }),
+            }
+        }
+
+    RETURN_TYPES = ("INTRINSICS",)
+    RETURN_NAMES = ("intrinsics",)
+    FUNCTION = "create"
+    CATEGORY = "3d/camera"
+
+    def create(self, matrix):
+        text = matrix.strip()
+        # Strip tensor(...) wrapper if pasted from PyTorch output
+        text = re.sub(r'^tensor\(', '', text)
+        text = re.sub(r'\)\s*$', '', text)
+        text = text.strip()
+
+        parsed = ast.literal_eval(text)
+        arr = np.array(parsed, dtype=np.float32)
+
+        # Handle [1, 3, 3] input
+        if arr.ndim == 3 and arr.shape == (1, 3, 3):
+            arr = arr[0]
+
+        if arr.shape != (3, 3):
+            raise ValueError(f"Expected 3x3 matrix, got shape {arr.shape}")
+
+        intrinsics = torch.from_numpy(arr).unsqueeze(0)  # [1, 3, 3]
+        return (intrinsics,)
+
+
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "DA3ToLoad3DCamera": DA3ToLoad3DCamera,
     "CreateLoad3DCamera": CreateLoad3DCamera,
+    "CameraIntrinsics": CameraIntrinsics,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "DA3ToLoad3DCamera": "DA3 to Load3D Camera",
     "CreateLoad3DCamera": "Create Load3D Camera",
+    "CameraIntrinsics": "Camera Intrinsics",
 }
